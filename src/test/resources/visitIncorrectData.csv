@@ -1,0 +1,5 @@
+timeOffsetFromNow,expectedExceptionMessage
+PT-1M,Visit startDateTime need to be in future.
+PT-2M,Visit startDateTime need to be in future.
+PT+59M,The time to your visit is too short.
+PT+58M,The time to your visit is too short.

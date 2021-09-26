@@ -1,0 +1,41 @@
+Configutation:
+  name: Default
+  Properties:
+    property:
+      - name: log-path
+        value: logs
+      - name: archive
+        value: ${log-path}/archive
+      - name: file-name
+        value: vetapp.log
+      - name: pattern
+        value: "%style{%d{ISO8601}}{black} %highlight{%-5level } %equals{%X{trace-id} }{ }{}[%style{%t}{bright,blue}] %style{%C{1.}}{bright,yellow}: %msg%n%throwable"
+      - name: log-level
+        value: ${env:log_level:-info}
+  Appenders:
+    Console:
+      name: Console_Appender
+      target: SYSTEM_OUT
+      PatternLayout:
+        pattern: ${pattern}
+    RollingFile:
+      name: RollingFile_Appender
+      fileName: ${log-path}/app.log
+      filePattern: ${archive}/app.%d{yyyy-MM-dd}-%i.log.gz
+      PatternLayout:
+        pattern: ${pattern}
+      Policies:
+        OnStartupTriggeringPolicy:
+          minSize: 1
+        SizeBasedTriggeringPolicy:
+          size: 1 MB
+        TimeBasedTriggeringPolicy:
+          interval: 1
+  Loggers:
+    Root:
+      level: info
+      appender-ref:
+        - level: ${log-level}
+          ref: Console_Appender
+        - level: debug
+          ref: RollingFile_Appender

@@ -1,0 +1,83 @@
+stages:
+  - build
+  - deploy
+  - notify
+
+gradle-build:
+  image: gradle:6.8.2-jdk11
+  stage: build
+  before_script:
+    - export GRADLE_USER_HOME=`pwd`/.gradle
+  script:
+    - gradle clean build
+  artifacts:
+    paths:
+      - build/libs/*.jar
+  cache:
+    key: gradle-cache
+    paths:
+      - .gradle/caches
+  only:
+    - merge_requests
+
+gradle-build-with-integration:
+  image: gradle:6.8.2-jdk11
+  stage: build
+  before_script:
+    - export GRADLE_USER_HOME=`pwd`/.gradle
+  script:
+    - gradle clean build integrationTest
+  artifacts:
+    paths:
+      - build/libs/*.jar
+  cache:
+    key: gradle-cache
+    paths:
+      - .gradle/caches
+  only:
+    - master
+
+heroku-deploy:
+  image: docker:stable
+  stage: deploy
+  variables:
+    CONTAINER_IMAGE: registry.gitlab.com/$CI_PROJECT_PATH
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVE: overlay2
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u $HEROKU_USER -p $HEROKU_API_KEY registry.heroku.com
+    - apk add --update curl && rm -rf /var/cache/apk/*
+  script:
+    - docker build --build-arg JAR_FILE=`ls build/libs/*.jar | head -1` --build-arg DB_URI=${VET_HEROKU_DB_URI} --build-arg DB_USER=${VET_HEROKU_DB_USER} --build-arg DB_PASSWORD=${VET_HEROKU_DB_PASSWORD} --tag registry.heroku.com/$HEROKU_APP_NAME/web .
+    - docker push registry.heroku.com/$HEROKU_APP_NAME/web
+    - chmod +x ./scripts/release-docker-in-heroku.sh
+    - ./scripts/release-docker-in-heroku.sh $HEROKU_APP_NAME $HEROKU_API_KEY
+  only:
+    - master
+
+teams_notifier_on_failure:
+  image: docker:stable
+  stage: notify
+  before_script:
+    - apk add --update curl && rm -rf /var/cache/apk/*
+  script:
+    - chmod +x ./scripts/notify-on-teams-when-failure.sh
+    - ./scripts/notify-on-teams-when-failure.sh $TEAMS_WEBHOOK_URL_ON_FAILURE $CI_PIPELINE_URL $CI_COMMIT_BRANCH
+  when: on_failure
+  only:
+    - merge_requests
+    - master
+
+teams_notifier_on_success:
+  image: docker:stable
+  stage: notify
+  before_script:
+    - apk add --update curl && rm -rf /var/cache/apk/*
+  script:
+    - chmod +x ./scripts/notify-on-teams-when-success.sh
+    - ./scripts/notify-on-teams-when-success.sh $TEAMS_WEBHOOK_URL_ON_SUCCESS "$CI_COMMIT_MESSAGE" $CI_PIPELINE_URL
+  when: on_success
+  only:
+    - master

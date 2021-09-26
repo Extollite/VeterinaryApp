@@ -1,0 +1,74 @@
+plugins {
+    id 'org.springframework.boot' version '2.4.5'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'java'
+}
+
+group = 'pl.gr'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+configurations.all {
+    exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-log4j2'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-hateoas'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
+    implementation 'org.mockito:mockito-core:3.8.0'
+    implementation 'org.postgresql:postgresql:42.2.19'
+    implementation 'org.mapstruct:mapstruct:1.4.2.Final'
+    implementation 'org.flywaydb:flyway-core:7.7.3'
+    implementation 'com.vladmihalcea:hibernate-types-52:2.10.4'
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+    implementation group: 'io.jsonwebtoken', name: 'jjwt', version: '0.9.1'
+
+    compileOnly 'org.projectlombok:lombok'
+
+    annotationProcessor 'org.projectlombok:lombok'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.4.2.Final'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.assertj:assertj-core:3.19.0'
+    testImplementation 'org.springframework.security:spring-security-test'
+}
+
+
+test {
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+
+    useJUnitPlatform()
+
+    include "**/*Test*"
+    exclude "**/*IntegrationTest*"
+}
+
+task integrationTest(type: Test, description: 'Runs the integration tests', group: 'Verification') {
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+
+    useJUnitPlatform()
+
+    include '**/*IntegrationTest*'
+}
+
+
